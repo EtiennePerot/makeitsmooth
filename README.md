@@ -32,15 +32,17 @@ Edit the variables as you see fit:
 ## Assumptions
 
 * All your video files are in Matroska format.
-* There is exactly one video **track** and one **segment** per file. This has nothing to do with multiple "chapters"; those are OK. If you have no idea what that means, you'll be fine.
+* There is exactly one **video track**. It's OK to have multiple non-video tracks.
+* There is exactly one **segment** per file. This has nothing to do with multiple "chapters"; those are OK too. If you have no idea what a segment is, you'll be fine.
 * All your video files are uniquely-named (their converted versions all get shoved in the same output directory).
 * You want H.264 video output.
+* You are OK with lossily re-encoding your files. (You keep the originals though, so if you want you can just generate the high-framerate ones on-demand whenever you want to watch them, and then delete them afterwards.)
 
 ## Features
 
 * Supports arbitrary number of non-video streams per file.
 * Supports attachments (subtitle fonts, etc) and other metadata.
-* Segment UIDs and chapter information are copied from the original file, so segment linking does not break.
+* Segment UIDs and chapter information are copied from the original file, so segment linking will keep working. (aka: Your external OPs/EDs will still work fine.)
 
 ## Dependencies
 
