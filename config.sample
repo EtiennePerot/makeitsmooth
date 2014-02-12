@@ -1,0 +1,34 @@
+# Settings for makeitsmooth.sh
+# ----------------------------
+
+# Output directory
+OUTPUT_DIR='/tmp/smooth'
+
+# Output FPS numerator (Final output FPS = OUTPUT_FPS_NUMERATOR / OUTPUT_FPS_DENOMINATOR)
+OUTPUT_FPS_NUMERATOR=60
+
+# Output FPS denominator (Final output FPS = OUTPUT_FPS_NUMERATOR / OUTPUT_FPS_DENOMINATOR)
+OUTPUT_FPS_DENOMINATOR=1
+
+# Number of cores to use to process the video. Must be an even number.
+# This is divided by 2 when passed to InterFrame and x264.
+# This way, if you have CORES=4, then there will be 2 InterFrame threads and 2 x264 threads.
+# This is also used for make -jX for compiling Wine. This number is then doubled (2 jobs per core).
+CORES="$(nproc)"
+
+# Name of the InterFrame preset.
+# Possible values are "Film", "Animation", "Smooth", "Weak".
+# Refer to InterFrame's documentation for info on these.
+INTERFRAME_PRESET=Animation
+
+# Value of the x264 --profile parameter.
+X264_PROFILE=high10
+
+# Value of the x264 --preset parameter.
+X264_PRESET=slow
+
+# Value of the x264 --tune parameter.
+X264_TUNE=animation
+
+# Extra flags you wish to pass to x264.
+X264_FLAGS='--crf 21 --qpmin 10 --qpmax 51'
