@@ -47,27 +47,14 @@ ffms2Plugins=("$ffms2Extract/FFMS2.avsi" "$ffms2Extract/x86/ffms2.dll")
 avsTemplate="$scriptDir/template.avs"
 wineInputFilename='__input.mkv'
 avs2yuvInputFilename='input.avs'
-halfCores="$(($CORES/2))"
 
 if [ -z "$1" ]; then
-	echo "Usage: $0 dir1 [dir2 [dir3 [...]]]"
-	echo "Also consider setting the configuration options in '$configFile' before running this."
+	echo "Usage: $0 n1 n2 ... [-c configfile2 n3 n4 n5 ... [-c configfile3 n6 n7 ...]]"
+	echo " In the above line, n1 and n2 would be processed using the default configuration file '$configFile',"
+	echo ' n3, n4 and n5 would be processed using configfile2, and n6, n7 would be processed using configfile3.'
+	echo ' nX can be an mkv file, or a directory which will be resursively searched for *.mkv files.'
 	exit 0
 fi
-
-if [ -f "$configFile" ]; then
-	echo "Loading values from '$configFile'."
-	source "$configFile"
-else
-	echo "No config file at '$configFile'. Continuing with default values."
-fi
-x264Flags="--profile $X264_PROFILE --preset $X264_PRESET --tune $X264_TUNE --threads $halfCores $X264_FLAGS"
-echo '> Configuration:'
-echo "   > Output dir: $OUTPUT_DIR"
-echo "   > Output FPS: $OUTPUT_FPS_NUMERATOR/$OUTPUT_FPS_DENOMINATOR (~$(python -c "print(round(float($OUTPUT_FPS_NUMERATOR)/float($OUTPUT_FPS_DENOMINATOR), 3))") Hz)"
-echo "   > Cores:      $CORES ($halfCores InterFrame, $halfCores x264)"
-echo "   > InterFrame: $INTERFRAME_PRESET preset"
-echo "   > x264:       $x264Flags"
 
 echo 'Making sure we have all resources...'
 for res in "${resources[@]}"; do
@@ -138,11 +125,6 @@ if [ ! -d "$aviSynthDir" ]; then
 	fi
 fi
 cp --no-clobber "$filesAviSynthPlugins"/* "${ffms2Plugins[@]}" "$aviSynthDir/plugins"
-
-if [ ! -d "$OUTPUT_DIR" ]; then
-	mkdir -p "$OUTPUT_DIR"
-fi
-outputDir="$(cd "$OUTPUT_DIR" && pwd)"
 wineInputFile="$wineDriveC/$wineInputFilename"
 avs2yuvInputFile="$wineDriveC/$avs2yuvInputFilename"
 avs2yuvInputWindowsFile="C:\\$avs2yuvInputFilename"
@@ -203,22 +185,56 @@ remux() {
 		mv "$tempOutputFile" "$outputFile"
 	fi
 }
-for arg; do
-	if [ ! -d "$arg" ]; then
-		echo "Error: '$arg' does not exist or is not a directory."
+
+processFile() {
+	file="$1"
+	echo "Processing file '$file'..."
+	outputFile="$outputDir/$(basename "$file")"
+	if [ -f "$outputFile" ]; then
+		echo "Warning: File '$outputFile' already exists. Skipping."
+		continue
+	fi
+	intermediateOutputFile="$outputDir/.$(basename "$file").tmp.264"
+	convert "$file" "$intermediateOutputFile"
+	remux "$file" "$intermediateOutputFile" "$outputFile"
+	rm "$intermediateOutputFile"
+}
+
+while [ -n "$1" ]; do
+	if [ "$1" == '-c' -o "$1" == '--config' ]; then
+		shift
+		configFile="$1"
+		shift
+		continue
+	fi
+	if [ -f "$configFile" ]; then
+		echo "Loading values from '$configFile'."
+		source "$configFile"
+	else
+		echo "Warning: No config file at '$configFile'. Continuing with previous/default values."
+	fi
+	halfCores="$(($CORES/2))"
+	x264Flags="--profile $X264_PROFILE --preset $X264_PRESET --tune $X264_TUNE --threads $halfCores $X264_FLAGS"
+	echo "> Final configuration for '$1':"
+	echo "   > Output dir: $OUTPUT_DIR"
+	echo "   > Output FPS: $OUTPUT_FPS_NUMERATOR/$OUTPUT_FPS_DENOMINATOR (~$(python -c "print(round(float($OUTPUT_FPS_NUMERATOR)/float($OUTPUT_FPS_DENOMINATOR), 3))") Hz)"
+	echo "   > Cores:      $CORES ($halfCores InterFrame, $halfCores x264)"
+	echo "   > InterFrame: $INTERFRAME_PRESET preset"
+	echo "   > x264:       $x264Flags"
+	if [ ! -d "$OUTPUT_DIR" ]; then
+		mkdir -p "$OUTPUT_DIR"
+	fi
+	outputDir="$(cd "$OUTPUT_DIR" && pwd)"
+	if [ -f "$1" ]; then
+		processFile "$1"
+	elif [ -d "$1" ]; then
+		actualDir="$(cd "$1" && pwd)"
+		while IFS= read -d $'\0' -r file; do
+			processFile "$file"
+		done < <(find "$actualDir" -name '*.mkv' -print0 | sort --zero-terminated)
+	else
+		echo "Error: '$1' does not exist or is not a file/directory."
 		exit 1
 	fi
-	actualDir="$(cd "$arg" && pwd)"
-	while IFS= read -d $'\0' -r file; do
-		echo "Processing file '$file'..."
-		outputFile="$outputDir/$(basename "$file")"
-		if [ -f "$outputFile" ]; then
-			echo "Warning: File '$outputFile' already exists. Skipping."
-			continue
-		fi
-		intermediateOutputFile="$outputDir/.$(basename "$file").tmp.264"
-		convert "$file" "$intermediateOutputFile"
-		remux "$file" "$intermediateOutputFile" "$outputFile"
-		rm "$intermediateOutputFile"
-	done < <(find "$actualDir" -name '*.mkv' -print0)
+	shift
 done

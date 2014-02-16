@@ -10,9 +10,14 @@ See the sample videos on [Spirton's tutorial][Convert videos to 60fps]. This use
 
 ## Usage
 
-	$ ./makeitsmooth.sh dir1 [dir2 [dir3 [...]]]
+	$ ./makeitsmooth n1 n2 ... [-c configfile2 n3 n4 n5 ... [-c configfile3 n6 n7 ...]]
+	    In the above line, n1 and n2 would be processed using the default configuration file ./config,
+	    n3, n4 and n5 would be processed using configfile2, and n6, n7 would be processed using configfile3.
+	    nX can be an mkv file, or a directory which will be resursively searched for *.mkv files.
 
 On first use, the script will grab a bunch of things to set up the Wine prefix with all the required Windows-y software. Everything will go under `scratch` next to the script.
+
+Do not run multiple instances of this at the same time. You will run into trouble. Instead, queue the directories in a single execution.
 
 ## Configuration
 
@@ -54,6 +59,11 @@ Edit the variables as you see fit:
 ## Licensing
 
 `makeitsmooth.sh` is licensed under the WTFPL.
+
+## TODO
+
+* Preserve video title (`mkvmerge --title`).
+* Support running multiple instances at the same time.
 
 [Motion interpolation]: https://en.wikipedia.org/wiki/Motion_interpolation
 [Convert videos to 60fps]: http://www.spirton.com/convert-videos-to-60fps/
