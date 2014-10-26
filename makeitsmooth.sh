@@ -6,6 +6,7 @@ set -e
 OUTPUT_DIR='/tmp/smooth'
 OUTPUT_FPS_NUMERATOR=60
 OUTPUT_FPS_DENOMINATOR=1
+OUTPUT_HEIGHT=1080
 CORES="$(nproc)"
 INTERFRAME_PRESET='Animation'
 X264_PROFILE='high10'
@@ -141,6 +142,7 @@ convert() {
 	template="$(echo "$template" | sed "s/%INTERFRAMEPRESET%/$INTERFRAME_PRESET/g")"
 	template="$(echo "$template" | sed "s/%FPSNUMERATOR%/$OUTPUT_FPS_NUMERATOR/g")"
 	template="$(echo "$template" | sed "s/%FPSDENOMINATOR%/$OUTPUT_FPS_DENOMINATOR/g")"
+	template="$(echo "$template" | sed "s/%HEIGHT%/$OUTPUT_HEIGHT/g")"
 	template="$(echo "$template" | sed "s/%PLUGINS%/$(echo "$aviSynthPluginsDirWindows" | sed 's/\\/\\\\/g')/g")"
 	template="$(echo "$template" | sed "s/%INPUTFILE%/C:\\\\$wineInputFilename/g")"
 	echo "$template" > "$avs2yuvInputFile"
