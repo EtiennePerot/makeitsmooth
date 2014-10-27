@@ -218,11 +218,12 @@ while [ -n "$1" ]; do
 	halfCores="$(($CORES/2))"
 	x264Flags="--profile $X264_PROFILE --preset $X264_PRESET --tune $X264_TUNE --threads $halfCores $X264_FLAGS"
 	echo "> Final configuration for '$1':"
-	echo "   > Output dir: $OUTPUT_DIR"
-	echo "   > Output FPS: $OUTPUT_FPS_NUMERATOR/$OUTPUT_FPS_DENOMINATOR (~$(python -c "print(round(float($OUTPUT_FPS_NUMERATOR)/float($OUTPUT_FPS_DENOMINATOR), 3))") Hz)"
-	echo "   > Cores:      $CORES ($halfCores InterFrame, $halfCores x264)"
-	echo "   > InterFrame: $INTERFRAME_PRESET preset"
-	echo "   > x264:       $x264Flags"
+	echo "   > Output dir:  $OUTPUT_DIR"
+	echo "   > Output FPS:  $OUTPUT_FPS_NUMERATOR/$OUTPUT_FPS_DENOMINATOR (~$(python -c "print(round(float($OUTPUT_FPS_NUMERATOR)/float($OUTPUT_FPS_DENOMINATOR), 3))") Hz)"
+	echo "   > Output size: * x $OUTPUT_HEIGHT pixels"
+	echo "   > Cores:       $CORES ($halfCores InterFrame, $halfCores x264)"
+	echo "   > InterFrame:  $INTERFRAME_PRESET preset"
+	echo "   > x264:        $x264Flags"
 	if [ ! -d "$OUTPUT_DIR" ]; then
 		mkdir -p "$OUTPUT_DIR"
 	fi

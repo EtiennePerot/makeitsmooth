@@ -14,6 +14,5 @@ Import("%PLUGINS%\InterFrame2.avsi")
 
 FFVideoSource("%INPUTFILE%").ConvertToYV12()
 SetMTMode(2)
-x = float(width) / float(height)
-SincResize(round(x * %HEIGHT%.0 / 4.0) * 4, %HEIGHT%)
+SincResize(round(float(width) / float(height) * %HEIGHT%.0 / 4.0) * 4, %HEIGHT%)
 InterFrame(Cores=%CORES%, Tuning="%INTERFRAMEPRESET%", NewNum=%FPSNUMERATOR%, NewDen=%FPSDENOMINATOR%)
