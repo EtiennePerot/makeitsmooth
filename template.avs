@@ -12,7 +12,7 @@ LoadPlugin("%PLUGINS%\svpflow2.dll")
 # InterFrame
 Import("%PLUGINS%\InterFrame2.avsi")
 
-FFVideoSource("%INPUTFILE%").ConvertToYV12()
+FFVideoSource("%INPUTFILE%", fpsnum=%INPUTFPSNUMERATOR%, fpsden=%INPUTFPSDENOMINATOR%).ConvertToYV12()
 SetMTMode(2)
 SincResize(round(float(width) / float(height) * %HEIGHT%.0 / 4.0) * 4, %HEIGHT%)
-InterFrame(Cores=%CORES%, Tuning="%INTERFRAMEPRESET%", NewNum=%FPSNUMERATOR%, NewDen=%FPSDENOMINATOR%)
+InterFrame(Cores=%CORES%, Tuning="%INTERFRAMEPRESET%", NewNum=%OUTPUTFPSNUMERATOR%, NewDen=%OUTPUTFPSDENOMINATOR%)

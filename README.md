@@ -39,6 +39,7 @@ Edit the variables as you see fit:
 
 * All your video files are in Matroska format.
 * There is exactly one **video track**. It's OK to have multiple non-video tracks.
+* The aforementioned single video track has constant framerate.
 * There is exactly one **segment** per file. This has nothing to do with multiple "chapters"; those are OK too. If you have no idea what a segment is, you'll be fine.
 * All your video files are uniquely-named (their converted versions all get shoved in the same output directory).
 * You want H.264 video output.

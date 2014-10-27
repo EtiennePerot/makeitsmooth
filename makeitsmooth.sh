@@ -97,6 +97,12 @@ if [ ! -d "$filesExtract" ]; then
 	fi
 fi
 
+echo 'Taking care of ffmpeg...'
+if ! ffprobe -version &> /dev/null; then
+	echo 'Error: Cannot find ffprobe in $PATH. Please install ffprobe/ffmpeg.'
+	exit 1
+fi
+
 echo 'Taking care of FFMS2...'
 if [ ! -d "$ffms2Extract" ]; then
 	pushd "$scratchDir"
@@ -135,18 +141,32 @@ echo 'Ready to start.'
 convert() {
 	inputFile="$1"
 	intermediateOutputFile="$2"
+	ffOutput="$(ffprobe -select_streams v -show_streams "$inputFile" 2>&1)"
+	if [ "$?" != 0 ]; then
+		echo "ffprobe failed to read video information from '$inputFile'"
+		return 1
+	fi
+	if [ "$(echo "$ffOutput" | grep '^sample_aspect_ratio=' | wc -l)" != 1 ]; then
+		echo "Video file '$inputFile' either has no video stream, or has more than one. Cannot proceed."
+		return 1
+	fi
+	sampleAspectRatio="$(echo "$ffOutput" | grep '^sample_aspect_ratio=' | cut -d= -f2)"
+	inputFpsNumerator="$(echo "$ffOutput" | grep '^avg_frame_rate=' | cut -d= -f2 | cut -d/ -f1)"
+	inputFpsDenominator="$(echo "$ffOutput" | grep '^avg_frame_rate=' | cut -d= -f2 | cut -d/ -f2)"
 	rm -f "$wineInputFile.ffindex" "$wineInputFile" "$avs2yuvInputFile" "$intermediateOutputFile" # Remove leftover cruft
 	ln -s "$inputFile" "$wineInputFile"
 	template="$(cat "$avsTemplate")"
 	template="$(echo "$template" | sed "s/%CORES%/$halfCores/g")"
 	template="$(echo "$template" | sed "s/%INTERFRAMEPRESET%/$INTERFRAME_PRESET/g")"
-	template="$(echo "$template" | sed "s/%FPSNUMERATOR%/$OUTPUT_FPS_NUMERATOR/g")"
-	template="$(echo "$template" | sed "s/%FPSDENOMINATOR%/$OUTPUT_FPS_DENOMINATOR/g")"
+	template="$(echo "$template" | sed "s/%INPUTFPSNUMERATOR%/$inputFpsNumerator/g")"
+	template="$(echo "$template" | sed "s/%INPUTFPSDENOMINATOR%/$inputFpsDenominator/g")"
+	template="$(echo "$template" | sed "s/%OUTPUTFPSNUMERATOR%/$OUTPUT_FPS_NUMERATOR/g")"
+	template="$(echo "$template" | sed "s/%OUTPUTFPSDENOMINATOR%/$OUTPUT_FPS_DENOMINATOR/g")"
 	template="$(echo "$template" | sed "s/%HEIGHT%/$OUTPUT_HEIGHT/g")"
 	template="$(echo "$template" | sed "s/%PLUGINS%/$(echo "$aviSynthPluginsDirWindows" | sed 's/\\/\\\\/g')/g")"
 	template="$(echo "$template" | sed "s/%INPUTFILE%/C:\\\\$wineInputFilename/g")"
 	echo "$template" > "$avs2yuvInputFile"
-	"$wineBinary" "$avs2yuvBinary" "$avs2yuvInputWindowsFile" - | x264 $x264Flags -o "$intermediateOutputFile" --stdin y4m -
+	"$wineBinary" "$avs2yuvBinary" "$avs2yuvInputWindowsFile" - | x264 $x264Flags --sar "$sampleAspectRatio" -o "$intermediateOutputFile" --stdin y4m -
 	rm -f "$wineInputFile.ffindex" "$wineInputFile" "$avs2yuvInputFile"
 }
 
@@ -193,8 +213,8 @@ processFile() {
 	echo "Processing file '$file'..."
 	outputFile="$outputDir/$(basename "$file")"
 	if [ -f "$outputFile" ]; then
-		echo "Warning: File '$outputFile' already exists. Skipping."
-		continue
+		echo "Warning: Output file '$outputFile' already exists. Skipping input file '$file'."
+		return 0
 	fi
 	intermediateOutputFile="$outputDir/.$(basename "$file").tmp.264"
 	convert "$file" "$intermediateOutputFile"
