@@ -1,0 +1,3 @@
+[submodule "static-res/submerger"]
+	path = static-res/submerger
+	url = git://perot.me/submerger.git

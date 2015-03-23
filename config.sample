@@ -31,4 +31,4 @@ X264_PRESET=slow
 X264_TUNE=animation
 
 # Extra flags you wish to pass to x264.
-X264_FLAGS='--crf 21 --qpmin 10 --qpmax 51'
+X264_FLAGS=(--crf 21 --qpmin 10 --qpmax 51)
