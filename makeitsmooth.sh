@@ -16,7 +16,7 @@ reloadDefaultConfig() {
 	OUTPUT_FPS_DENOMINATOR=1      # Denominator of the target FPS.
 	OUTPUT_FPS_MULTIPLIER=''      # If set, the target framerate is instead determined by multiplying the input framerate
 	                              # with this value.
-	INTERFRAME_PRESET='Animation' # InterFrame preset name.
+	INTERFRAME_PRESET='Animation' # InterFrame preset name, or "Placebo" for no InterFrame.
 
 	# Encoding settings
 	CORES="$(nproc)"                              # Number of CPU cores to use. Half of the cores will go to x264, and the
@@ -918,9 +918,16 @@ convert() {
 	fi
 	template="$(cat "$avsTemplate")"
 	if [ "$INTERFRAME_ENABLE" == true ]; then
-		template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAME%\s*//g')"
+		if [ "$INTERFRAME_PRESET" == 'Placebo' ]; then
+			template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAME%.*$//g')"
+			template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAMEPLACEBO%\s*//g')"
+		else
+			template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAME%\s*//g')"
+			template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAMEPLACEBO%.*$//g')"
+		fi
 	else
 		template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAME%.*$//g')"
+		template="$(echo "$template" | sed -r 's/^\s*%IFINTERFRAMEPLACEBO%.*$//g')"
 	fi
 	template="$(echo "$template" | sed "s/%AVISYNTHCORES%/$halfCores/g")"
 	template="$(echo "$template" | sed "s/%MAXMEMORYMB%/$AVISYNTH_MEMORY_MB/g")"

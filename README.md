@@ -30,7 +30,7 @@ Edit the variables as you see fit:
 * `OUTPUT_FPS_NUMERATOR` / `OUTPUT_FPS_DENOMINATOR`: Set the target framerate. The final framerate will be the ratio of these two numbers. For 60.0 Hz, simply use `60` and `1`.
 * `OUTPUT_HEIGHT`: Resulting height of the video, in pixels. Default is `1080` pixels. The video width is rounded to the nearest multiple of 4.
 * `CORES`: Number of cores to use to process the video. Must be an even number. This is divided by 2 when passed to InterFrame and x264. This way, if you have `CORES=4`, then there will be 2 InterFrame threads and 2 x264 threads. This is also used for `make -jX` for compiling Wine. This number is then doubled (2 jobs per core).
-* `INTERFRAME_PRESET`: Name of the InterFrame preset. Possible values are "Film", "Animation" (cartoons/anime), "Smooth", "Weak". Refer to [InterFrame's documentation] for info on these.
+* `INTERFRAME_PRESET`: Name of the InterFrame preset. Possible values are `Film`, `Animation` (cartoons/anime), `Smooth`, `Weak`, or `Placebo`. Refer to [InterFrame's documentation] for info on these. `Placebo` doesn't use InterFrame; instead, it just uses AviSynth's ConvertFPS function, with no motion interpolation.
 * `X264_PROFILE`, `X264_PRESET`, `X264_TUNE`: Values for the x264 `--profile`, `--preset`, and `--tune` parameters.
 * `X264_FLAGS`: Extra flags you wish to pass to x264.
 

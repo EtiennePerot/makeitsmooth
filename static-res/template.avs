@@ -30,6 +30,8 @@ ConvertToYV12()
 
 %IFINTERFRAME% # Actual motion interpolation.
 %IFINTERFRAME% InterFrame(Cores=%AVISYNTHCORES%, Tuning="%INTERFRAMEPRESET%", NewNum=%OUTPUTFPSNUMERATOR%, NewDen=%OUTPUTFPSDENOMINATOR%)
+%IFINTERFRAMEPLACEBO% # No motion interpolation, but change framerate anyway.
+%IFINTERFRAMEPLACEBO% ConvertFPS(%OUTPUTFPSNUMERATOR%, %OUTPUTFPSDENOMINATOR%)
 
 %IFREMOVEED% # Remove ED.
 %IFREMOVEED% edClipBefore = Trim(0, %EDBEGINFADEENDFRAME%).FadeOut0(%EDBEGINFADEFRAMECOUNT%)
@@ -41,9 +43,9 @@ ConvertToYV12()
 %IFREMOVEOP% opClipAfter = Trim(%OPENDFADEBEGINFRAME%, 0).FadeIn0(%OPENDFADEFRAMECOUNT%)
 %IFREMOVEOP% opClipBefore ++ opClipAfter
 
-%IFBURNSUBTITLES% # Burn subtitles. Resize 4x for antialias.
+%IFBURNSUBTITLES% # Burn subtitles. Resize 2x for antialias.
 %IFBURNSUBTITLES% burnSubWidth = last.Width
 %IFBURNSUBTITLES% burnSubHeight = last.Height
-%IFBURNSUBTITLES% PointResize(burnSubWidth * 4, burnSubHeight * 4)
+%IFBURNSUBTITLES% PointResize(burnSubWidth * 2, burnSubHeight * 2)
 %IFBURNSUBTITLES% TextSub("%BURNEDSUBTITLESFILE%")
-%IFBURNSUBTITLES% PointResize(burnSubWidth, burnSubHeight)
+%IFBURNSUBTITLES% BilinearResize(burnSubWidth, burnSubHeight)
