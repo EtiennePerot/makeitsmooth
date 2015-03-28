@@ -66,10 +66,8 @@ reloadDefaultConfig() {
 	                                      # Ignored if the strategy is "none" and SUB_INJECT_SEPARATE is false.
 	BURN_SUBTITLES=false                  # Burn subtitles to video. Either "true" (subtitles burned on video, no subtitles included in container),
 	                                      # "false" (no burn, subtitles included in container), or "both" (subtitles burned on video and included in container).
-	BURN_SUBTITLES_BURN_STRATEGY=0        # Subtitles to burn. No effect if BURN_SUBTITLES is "false". Note that if you have SUB_INJECT_SEPARATE=true, the
-	                                      # first subtitle stream is the injected one, and all other subtitle streams that were previously present in the file
-	                                      # are now offset by one. FIXME: Make it work.
-	BURN_SUBTITLES_KEEP_STRATEGY='all'    # Subtitles to keep in the container after burning. No effect if BURN_SUBTITLES is "false". FIXME: Make that work
+	BURN_SUBTITLES_BURN_STRATEGY=0        # Strategy to select subtitles to burn. No effect if BURN_SUBTITLES is "false".
+	BURN_SUBTITLES_BURN_INJECTED=true     # If there are injected subtitles, burn them.
 }
 
 reloadDefaultConfig
@@ -766,13 +764,13 @@ convert() {
 	fi
 
 	subtitleStreamsMkvMergeCommand=()
-	subtitleStreamsFilesToMerge=()
+	subtitleStreamsFilesToMergeForBurning=()
 	currentStreamZeroBasedIndex=0
 	currentStreamInjectionZeroBasedIndex=0
 	subtitleStreamsFound=false
 	injectedSubtitleFile=''
 	currentStreamInjectedFile=''
-	if [ "$SUB_INJECT" == true -a \( "$SUB_INJECT_MERGE_STRATEGY" != none -o "$SUB_INJECT_SEPARATE" == true \) ]; then
+	if [ "$SUB_INJECT" == true -a \( "$SUB_INJECT_MERGE_STRATEGY" != none -o "$SUB_INJECT_SEPARATE" == true -o "$BURN_SUBTITLES_BURN_INJECTED" == true \) ]; then
 		# Determine file to inject.
 		injectedSubtitleFile="$(getClosestFile "$inputFile" "$SUB_INJECT_DIRECTORY")"
 		if [ -z "$injectedSubtitleFile" ]; then
@@ -810,6 +808,9 @@ convert() {
 				subtitleStreamsMkvMergeCommand+=(--language "0:$SUB_INJECT_LANGUAGE")
 			fi
 			subtitleStreamsMkvMergeCommand+=(--no-track-tags --no-global-tags "$currentStreamInjectedFile")
+		fi
+		if [ "$BURN_SUBTITLES_BURN_INJECTED" == true ]; then
+			subtitleStreamsFilesToMergeForBurning+=("$currentStreamInjectedFile")
 		fi
 	fi
 	while echo "$ffSubtitleStreams" | grep -qxF '[STREAM]'; do
@@ -850,7 +851,9 @@ convert() {
 				fi
 				subtitleStreamsMkvMergeCommand+=(--no-track-tags --no-global-tags "$currentStreamConvertedFile")
 			fi
-			subtitleStreamsFilesToMerge+=("$currentStreamConvertedFile")
+			if streamMatchesRules "$BURN_SUBTITLES_BURN_STRATEGY" "$currentStreamZeroBasedIndex"; then
+				subtitleStreamsFilesToMergeForBurning+=("$currentStreamConvertedFile")
+			fi
 
 			# Extract subtitle stream.
 			if ! mkvextract tracks "$inputFile" "$currentStreamIndex:$currentStreamExtractedFile"; then
@@ -901,9 +904,9 @@ convert() {
 	fi
 	# Check for subtitles to burn.
 	actuallyBurnSubtitles=false
-	if [ "$BURN_SUBTITLES" != false -a "${#subtitleStreamsFilesToMerge[@]}" -gt 0 ]; then
-		if ! "$submergerBinary" "${subtitleStreamsFilesToMerge[@]}" > "$burnedSubtitlesFile"; then
-			fail "Could not merge subtitle files ${subtitleStreamsFilesToMerge[@]} for burning."
+	if [ "$BURN_SUBTITLES" != false -a "${#subtitleStreamsFilesToMergeForBurning[@]}" -gt 0 ]; then
+		if ! "$submergerBinary" "${subtitleStreamsFilesToMergeForBurning[@]}" > "$burnedSubtitlesFile"; then
+			fail "Could not merge subtitle files ${subtitleStreamsFilesToMergeForBurning[@]} for burning."
 			return 1
 		fi
 		actuallyBurnSubtitles=true
