@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 reloadDefaultConfig() {
 	# All of these values are overridable by command-line-specified config files, and by per-directory config files.
@@ -384,8 +385,8 @@ guessEpisodeNumber() {
 }
 
 getClosestFile() {
-	# Usage: getClosestFile originalFile matchDir
-	# Will attempt to determine the closest file to originalFile in matchDir, based on (in order):
+	# Usage: getClosestFile originalFile matchDir [filename pattern]
+	# Will attempt to determine the closest file to originalFile in matchDir (optionally matching the given pattern), based on (in order):
 	#   - Exact filename match
 	#   - Exact filename prefix match
 	#   - Exact filename-minus-extension prefix match
@@ -396,6 +397,7 @@ getClosestFile() {
 	# The actual success criterion is whether anything was output to stdout.
 	getClosestFileOriginalFile="$(basename "$1")"
 	getClosestFileMatchDir="$2"
+	getClosestFilePattern="$3"
 	getClosestFileMatchFiles=()
 	pushd "$getClosestFileMatchDir" &> /dev/null
 		getClosestFileMatchFiles=(*)
@@ -412,6 +414,9 @@ getClosestFile() {
 	)
 	for getClosestFileRegex in "${getClosestFileRegexes[@]}"; do
 		for getClosestFileF in "${getClosestFileMatchFiles[@]}"; do
+			if [ -n "$getClosestFilePattern" ] && ! echo "$getClosestFileF" | grep -qiP "$getClosestFilePattern"; then
+				continue
+			fi
 			if echo "$getClosestFileF" | grep -qiP "$getClosestFileRegex"; then
 				echo "$getClosestFileMatchDir/$getClosestFileF"
 				return 0
@@ -772,7 +777,7 @@ convert() {
 	currentStreamInjectedFile=''
 	if [ "$SUB_INJECT" == true -a \( "$SUB_INJECT_MERGE_STRATEGY" != none -o "$SUB_INJECT_SEPARATE" == true -o "$BURN_SUBTITLES_BURN_INJECTED" == true \) ]; then
 		# Determine file to inject.
-		injectedSubtitleFile="$(getClosestFile "$inputFile" "$SUB_INJECT_DIRECTORY")"
+		injectedSubtitleFile="$(getClosestFile "$inputFile" "$SUB_INJECT_DIRECTORY" '\.(ass|srt)$')"
 		if [ -z "$injectedSubtitleFile" ]; then
 			if [ "$SUB_MUST_INJECT" == true ]; then
 				fail "Sub injection must succeed, but could not find a matching subtitle file for '$inputFile' in '$SUB_INJECT_DIRECTORY'."
