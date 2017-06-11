@@ -84,6 +84,7 @@ staticResourceDir="$scriptDir/static-res"
 scratchDir="$scriptDir/scratch"
 processChapters="$staticResourceDir/process-chapters.py"
 processSubtitles="$staticResourceDir/process-subtitles.py"
+checkAss="$staticResourceDir/check-ass.py"
 wineTar='wine-1.7.12.tar.bz2'
 avisynthBuild7z='avisynth_20130928.7z'
 devilBuildZip='DevIL-EndUser-x86-1.7.8.zip'
@@ -827,7 +828,6 @@ convert() {
 			return 1
 		fi
 		currentStreamExtractedFile="$tempSubtitlesDirectory/extracted-$currentStreamIndex"
-		# FIXME: Support SRT!
 		currentStreamConvertedFile="$tempSubtitlesDirectory/converted-$currentStreamIndex.ass"
 		currentStreamTitle="$(echo "$currentStream" | grep '^TAG:title=' | cut -d= -f2-)"
 		currentStreamStartPts="$(echo "$currentStream" | grep '^start_pts=' | cut -d= -f2)"
@@ -865,9 +865,14 @@ convert() {
 				fail "Could not extract $currentStreamLogInfo."
 				return 1
 			fi
+			# Attempt to convert to ASS subtitle if it doesn't appear to be in that format.
+			if ! "$checkAss" --file "$currentStreamExtractedFile" 2> /dev/null; then
+				ffmpeg -i "$currentStreamExtractedFile" -f ass "$currentStreamConvertedFile"
+			else
+				cp -a "$currentStreamExtractedFile" "$currentStreamConvertedFile"
+			fi
 
 			# Remove OP/ED.
-			cp -a "$currentStreamExtractedFile" "$currentStreamConvertedFile"
 			if [ "$edActuallyRemove" == true ]; then
 				if ! "$processSubtitles" --operation remove --begin "$edBeginFadeEndTimestamp" --end "$edEndFadeBeginTimestamp" --file "$currentStreamConvertedFile"; then
 					fail "Failed to remove ED from $currentStreamLogInfo."
